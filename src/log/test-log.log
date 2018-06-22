@@ -1,0 +1,5 @@
+2018-06-22 10:34:05 362-->[main-SendThread(127.0.0.1:2181)]--[INFO ]--[ClientCnxn]--Opening socket connection to server 127.0.0.1/127.0.0.1:2181. Will not attempt to authenticate using SASL (unknown error)
+2018-06-22 10:34:05 363-->[main-SendThread(127.0.0.1:2181)]--[INFO ]--[ClientCnxn]--Socket connection established to 127.0.0.1/127.0.0.1:2181, initiating session
+2018-06-22 10:34:05 365-->[main-SendThread(127.0.0.1:2181)]--[WARN ]--[ClientCnxn]--Unable to reconnect to ZooKeeper service, session 0x1000070c2520005 has expired
+2018-06-22 10:34:05 366-->[main-SendThread(127.0.0.1:2181)]--[INFO ]--[ClientCnxn]--Unable to reconnect to ZooKeeper service, session 0x1000070c2520005 has expired, closing socket connection
+2018-06-22 10:34:05 368-->[main-EventThread]--[INFO ]--[ClientCnxn]--EventThread shut down for session: 0x1000070c2520005
