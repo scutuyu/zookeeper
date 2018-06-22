@@ -43,16 +43,16 @@ import java.util.concurrent.CountDownLatch;
  */
 public class ZookeeperLock implements Watcher{
 
-    private static ZooKeeper zk;
-    private static final String hostPort = "127.0.0.1:2181";
-    private static final int sessionTimeout = 40000; // 设置太小了，对debug调试有影响
-    private static String currNode;
-    private static String preNode;
-    private static String root = "/locks";
-    private static String lockName = "lock";
-    private static String splitStr = "_";
-    private static CountDownLatch latch = null;
-    private static CountDownLatch conLatch = new CountDownLatch(1);
+    private ZooKeeper zk;
+    private final String hostPort = "127.0.0.1:2181";
+    private final int sessionTimeout = 40000; // 设置太小了，对debug调试有影响
+    private String currNode;
+    private String preNode;
+    private String root = "/locks";
+    private String lockName = "lock";
+    private String splitStr = "_";
+    private CountDownLatch latch = null;
+    private CountDownLatch conLatch = new CountDownLatch(1);
 
 
     public ZookeeperLock() {
@@ -73,24 +73,23 @@ public class ZookeeperLock implements Watcher{
     public void lock() {
         try {
             // 1. 创建临时节点
-            String newNode = zk.create(root + "/" + lockName + splitStr, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
+            currNode = zk.create(root + "/" + lockName + splitStr, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
             while (true){
                 // 2. 获取服务器获取锁的所有临时节点
                 List<String> allNodes = zk.getChildren(root, false);
                 // 3. 取出最小的临时节点，并与新创建的节点比较
                 List<String> sortedNodes = sortedNode(allNodes);
                 // 如果相等，则获取锁，并返回
-                if (newNode.equals(root + "/" + sortedNodes.get(0))) {
+                if (currNode.equals(root + "/" + sortedNodes.get(0))) {
                     System.out.println(LogUtil.getMachineInfo() + " get the lock : " + sortedNodes.get(0));
-                    currNode = newNode;
                     return;
                 }else {
                     // 如果不相等，则获取锁失败，并监听前一个临时节点，然后阻塞
-                    preNode = root + "/" + sortedNodes.get(Collections.binarySearch(sortedNodes, newNode.substring(newNode.lastIndexOf("/") + 1)) - 1);
-                    System.out.println(LogUtil.getMachineInfo() + " wait " + preNode + " release the lock");
+                    preNode = root + "/" + sortedNodes.get(Collections.binarySearch(sortedNodes, currNode.substring(currNode.lastIndexOf("/") + 1)) - 1);
+                    System.out.println(LogUtil.getMachineInfo() + " list " + sortedNodes + " currNode " + currNode + " wait " + preNode + " release the lock");
                     Stat preData = zk.exists(preNode, this);
                     if (preData == null) {
-                        System.out.println(LogUtil.getMachineInfo() + " get lock " + newNode.substring(newNode.lastIndexOf("/") + 1) + " success.");
+                        System.out.println(LogUtil.getMachineInfo() + " get lock " + currNode.substring(currNode.lastIndexOf("/") + 1) + " success.");
                         return;
                     }
                     latch = new CountDownLatch(1);
@@ -98,8 +97,6 @@ public class ZookeeperLock implements Watcher{
                 }
             }
         } catch (Exception e) {
-            System.out.println(LogUtil.getMachineInfo() + " is alive" + zk.getState().isAlive());
-            System.out.println(LogUtil.getMachineInfo() + " is connected " + zk.getState().isConnected());
             throw new RuntimeException(e.getMessage());
         }
     }
@@ -134,6 +131,7 @@ public class ZookeeperLock implements Watcher{
 
         Event.KeeperState keeperState = event.getState();
         Event.EventType eventType = event.getType();
+        System.out.println(LogUtil.getMachineInfo() + " event type " + eventType + " event path " + event.getPath());
         if (keeperState == Event.KeeperState.SyncConnected) {
             if (eventType == Event.EventType.None) {
                 System.out.println(LogUtil.getMachineInfo() + " connect to zk server successfully.");

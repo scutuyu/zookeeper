@@ -65,6 +65,8 @@ public class HelloTest {
         list.add("hello");
         list.add("world");
         list.add("exc");
+        int world1 = list.indexOf("world");
+        System.out.println(world1);
         int world = Collections.binarySearch(list, "world");
         System.out.println(world);
 
