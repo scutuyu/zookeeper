@@ -11,6 +11,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * <pre>
@@ -47,14 +48,17 @@ import java.util.List;
 public class ZookeeperTest implements Watcher{
 
     ZooKeeper zooKeeper;
+    CountDownLatch latch;
 
     /**
      * sessionTimeout小于4000取4000，大于4000取真实值
      * @throws IOException
      */
     @Before
-    public void testBefore() throws IOException{
+    public void testBefore() throws IOException, InterruptedException {
+        latch = new CountDownLatch(1);
         zooKeeper = new ZooKeeper("127.0.0.1:2181", 4000, this);
+        latch.await();
     }
 
 
@@ -120,24 +124,26 @@ public class ZookeeperTest implements Watcher{
 //                doProcess(event);
 //            }
 //        });
-        // 使用实例化zookeeper的watcher来监听
-        List<String> children = zooKeeper.getChildren("/hello", true);
-        System.out.println(children);
-        Thread.currentThread().sleep(10000);
+        // 使用实例化zookeeper的watcher来监听,即默认的监听器
+        List<String> children = zooKeeper.getChildren("/dubbo", false);
+        for (String s : children) {
+            System.out.println(s);
+        }
     }
 
     /**
      * 获取节点数据,如果设置了监听，当节点被删除，更新数据也会触发监听,而新增子节点不会触发监听,删除子节点也不会触发监听
+     * <p>监听也是一次性的</p>
      * @throws KeeperException 如果没有指定的节点，将报KeeperException$NoNodeException异常
      * @throws InterruptedException
      */
     @Test
     public void testGetData() throws KeeperException, InterruptedException {
-        Stat stat = new Stat();
-        stat.setVersion(1);
-        byte[] data = zooKeeper.getData("/hello/tuyu", true, new Stat());
+//        Stat stat = new Stat();
+//        stat.setVersion(1);
+        byte[] data = zooKeeper.getData("/hello", true, new Stat());
         System.out.println("---> " + new String(data));
-        Thread.sleep(10000);
+        Thread.sleep(Integer.MAX_VALUE);
     }
 
     /**
@@ -162,6 +168,17 @@ public class ZookeeperTest implements Watcher{
         zooKeeper.addAuthInfo("tuyu", "tuyu".getBytes());
     }
 
+    /**
+     * 监听，监听只能使用一次，如果想永远监听，则需要在process方法中重新监听
+     * <p>One-time trigger</p>
+     */
+    @Test
+    public void testListen() throws KeeperException, InterruptedException {
+        Stat exists = zooKeeper.exists("/hello", this);
+        Thread.sleep(Integer.MAX_VALUE);
+    }
+
+
     @Override
     public void process(WatchedEvent event) {
         System.out.println("====>");
@@ -172,10 +189,73 @@ public class ZookeeperTest implements Watcher{
         String path = event.getPath();
         Event.KeeperState state = event.getState();
         Event.EventType type = event.getType();
-        WatcherEvent wrapper = event.getWrapper();
-        System.out.println("path : " + path);
-        System.out.println("stat : " + state);
-        System.out.println("type : " + type);
-        System.out.println("wrapper : " + wrapper);
+        if (state == Event.KeeperState.SyncConnected) {
+            switch (type) {
+                case None:
+                    System.out.println("zk client has connected to zk server");
+                    latch.countDown();
+                    break;
+                case NodeCreated:
+                    System.out.println("node " + path + " has been created");
+                    break;
+                case NodeDataChanged:
+                    System.out.println("node " + path + " data has changed to " + getDate(path));
+                    break;
+                case NodeChildrenChanged:
+                    System.out.println("node " + path + " children has changed");
+                    break;
+                case NodeDeleted:
+                    System.out.println("node " + path + " has been deleted");
+                    break;
+                default:
+                    break;
+            }
+        } else if (state == Event.KeeperState.Disconnected) {
+            System.out.println("zk client has disconnected to zk server");
+        } else if (state == Event.KeeperState.Expired) {
+            System.out.println("session timeout");
+        } else if (state == Event.KeeperState.AuthFailed) {
+            System.out.println("auth failed");
+        }
+    }
+
+    private String getDate(String path) {
+        try {
+            return new String(zooKeeper.getData(path, false, new Stat()));
+        } catch (KeeperException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return "null";
+    }
+
+    /**
+     * 如果节点被同一个watcher监听了两次以上，会被通知多次吗
+     * <p>答案是不,只会被通知一次</p>
+     */
+    @Test
+    public void testTwo() throws KeeperException, InterruptedException {
+        String path = "/dev/address.port";
+        byte[] data = zooKeeper.getData(path, this, new Stat());
+        System.out.println(new String(data));
+        zooKeeper.getData(path, this, new Stat());
+        Stat exists = zooKeeper.exists(path, this);
+        zooKeeper.exists(path, this);
+        System.out.println(exists);
+        Thread.sleep(Integer.MAX_VALUE);
+    }
+
+    /**
+     * exist监听不存在的节点时不会报错，而getData监听不存在节点时会报NoNodeException
+     */
+    @Test
+    public void testExsit() throws KeeperException, InterruptedException {
+        String path = "/dev/address.ip";
+        Stat exists = zooKeeper.exists(path, this);
+        System.out.println(exists);
+
+        byte[] data = zooKeeper.getData(path, this, new Stat());
+        System.out.println(new String(data));
     }
 }

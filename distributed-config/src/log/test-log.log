@@ -1,0 +1,2 @@
+2018-06-27 15:07:42 803-->[Thread-0]--[DEBUG]--[DefaultListableBeanFactory]--Retrieved dependent beans for bean 'myMap': [beanConfig]
+2018-06-27 15:07:42 804-->[Thread-0]--[DEBUG]--[DisposableBeanAdapter]--Invoking destroy() on bean with name 'myMap'

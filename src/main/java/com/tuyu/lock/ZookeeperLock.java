@@ -1,9 +1,8 @@
-package com.tuyu.listen;
+package com.tuyu.lock;
 
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -36,7 +35,8 @@ import java.util.concurrent.CountDownLatch;
  * </pre>
  * <p>
  * tuyu于6/21/18祈祷...
- *
+ * 分布式锁的实现，基于zookeeper
+ * <p>每次加锁时，都需要newZookeeperLock对象</p>
  * @author tuyu
  * @date 6/21/18
  * Stay Hungry, Stay Foolish.

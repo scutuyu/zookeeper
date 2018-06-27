@@ -1,4 +1,4 @@
-package com.tuyu.listen;
+package com.tuyu.lock;
 
 /**
  * <pre>
@@ -27,7 +27,7 @@ package com.tuyu.listen;
  * </pre>
  * <p>
  * tuyu于6/22/18祈祷...
- *
+ * 分布式锁测试类
  * @author tuyu
  * @date 6/22/18
  * Stay Hungry, Stay Foolish.
