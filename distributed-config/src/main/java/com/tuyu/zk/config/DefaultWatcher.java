@@ -7,10 +7,14 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * <pre>
@@ -45,16 +49,15 @@ import java.util.Map;
  * Stay Hungry, Stay Foolish.
  */
 @Component
-public class DefaultWatcher implements Watcher {
+public class DefaultWatcher implements Watcher, InitializingBean {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultWatcher.class);
+
+    private Map<String, List<String>> beanNameConfigListMap = new ConcurrentHashMap<>(256);
 
     @Autowired
     private ZooKeeper zooKeeper;
 
-//    public void setZooKeeper(ZooKeeper zooKeeper) {
-//        this.zooKeeper = zooKeeper;
-//    }
 
     @Autowired
     private Map myMap;
@@ -76,13 +79,6 @@ public class DefaultWatcher implements Watcher {
                 logger.info("node {} has been deleted", event.getPath());
             } else if (eventType == Event.EventType.NodeDataChanged) {
                 logger.info("node {} data has changed", event.getPath());
-                try {
-                    zooKeeper.exists(event.getPath(), this); // 从新监听
-                } catch (KeeperException e) {
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
                 refreshProps(event.getPath());
             }
         } else if (keeperState == Event.KeeperState.Disconnected) {
@@ -96,15 +92,37 @@ public class DefaultWatcher implements Watcher {
 
     private void refreshProps(String path) {
         try {
+            zooKeeper.exists(path, this); // 重新监听
             byte[] data = zooKeeper.getData(path, this, new Stat());
             String key = path.substring(path.lastIndexOf("/") + 1);
             String value = new String(data);
-            myMap.put(key, value);
-            System.out.println(myMap);
+            ConfigBean configBean = (ConfigBean) myMap.get(key);
+            configBean.setValue(value);
+            myMap.put(key, configBean);
+            System.out.println("refresh ----> " + Thread.currentThread() + "   " + myMap);
         } catch (KeeperException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        System.out.println("after init defaultWatcher =====> " + myMap);
+        List<String> list = null;
+        for (Object key : myMap.keySet()) {
+            ConfigBean configBean = (ConfigBean) myMap.get(key);
+            String beanName = configBean.getBeanName();
+            if (beanNameConfigListMap.containsKey(beanName)) {
+                list = beanNameConfigListMap.get(beanName);
+                list.add(key.toString());
+            } else {
+                list = new ArrayList<>();
+                list.add(key.toString());
+                beanNameConfigListMap.put(beanName, list);
+            }
+        }
+        System.out.println("inti beanNameConfigListMap  ---->  " + beanNameConfigListMap);
     }
 }

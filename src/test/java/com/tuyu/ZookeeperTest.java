@@ -90,7 +90,7 @@ public class ZookeeperTest implements Watcher{
      * @throws InterruptedException
      */
     @Test
-    public void testAdd() throws KeeperException, InterruptedException {
+    public void testCreate() throws KeeperException, InterruptedException {
         System.out.println();
         String s = zooKeeper.create("/hello", "hello data".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         System.out.println(s);
@@ -111,6 +111,11 @@ public class ZookeeperTest implements Watcher{
 
     /**
      * 获取节点的子节点，并监听，修改节点数据并不触发监听的事件，只有新增子节点，删除子节点才会触发监听
+     * <p>
+     *     getChildren 监听新增、删除；修改不监听
+     *     getData 监听修改、删除
+     *     exists 监听新增、删除、修改
+     * </p>
      * @throws KeeperException
      * @throws InterruptedException
      */
@@ -125,10 +130,11 @@ public class ZookeeperTest implements Watcher{
 //            }
 //        });
         // 使用实例化zookeeper的watcher来监听,即默认的监听器
-        List<String> children = zooKeeper.getChildren("/dubbo", false);
+        List<String> children = zooKeeper.getChildren("/test", this);
         for (String s : children) {
             System.out.println(s);
         }
+        Thread.sleep(Integer.MAX_VALUE);
     }
 
     /**
@@ -248,14 +254,28 @@ public class ZookeeperTest implements Watcher{
 
     /**
      * exist监听不存在的节点时不会报错，而getData监听不存在节点时会报NoNodeException
+     * <p>用exist监听的不存在节点，当节点创建时，会得到通知</p>
      */
     @Test
     public void testExsit() throws KeeperException, InterruptedException {
-        String path = "/dev/address.ip";
+        String path = "/dev";
         Stat exists = zooKeeper.exists(path, this);
         System.out.println(exists);
 
-        byte[] data = zooKeeper.getData(path, this, new Stat());
-        System.out.println(new String(data));
+//        byte[] data = zooKeeper.getData(path, this, new Stat());
+//        System.out.println(new String(data));
+
+        Thread.sleep(Integer.MAX_VALUE);
+    }
+
+    /**
+     * getData的版本控制
+     */
+    @Test
+    public void testGetVersion() throws KeeperException, InterruptedException {
+        Stat stat = new Stat();
+        stat.setVersion(6);
+        byte[] data = zooKeeper.getData("/hello", this, stat);
+        System.out.println(" --- > " + new String(data));
     }
 }

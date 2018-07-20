@@ -9,6 +9,7 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.web.WebAppConfiguration;
 
@@ -85,6 +86,13 @@ public class Register implements ApplicationContextAware {
 //            String next = iterator.next();
 //            System.out.println("----> " + next);
 //        }
-        applicationContext.getParentBeanFactory();
+
+
+        GenericApplicationContext genericApplicationContext = (GenericApplicationContext) applicationContext;
+        DefaultListableBeanFactory defaultListableBeanFactory = genericApplicationContext.getDefaultListableBeanFactory();
+        Iterator<String> iterator = defaultListableBeanFactory.getBeanNamesIterator();
+        while (iterator.hasNext()) {
+            System.out.println("---> " + iterator.next());
+        }
     }
 }

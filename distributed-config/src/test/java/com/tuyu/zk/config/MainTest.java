@@ -78,6 +78,9 @@ public class MainTest {
     @Autowired
     Map myMap;
 
+    @Autowired
+    Register register;
+
     @Test
     public void testAddress() throws InterruptedException, KeeperException {
 
@@ -87,8 +90,11 @@ public class MainTest {
         Map<String, Object> zkProps = new HashMap<>();
         for (Object obj : myMap.keySet()) {
             String key = obj.toString();
-            String value = myMap.get(key).toString();
+            ConfigBean configBean = (ConfigBean) myMap.get(key);
+            String value = configBean.getValue();
             String path = rootPath + "/" + key;
+            configBean.setZookeeperPath(path);
+            configBean.setKey(key);
             Stat exists = zooKeeper.exists(path, defaultWatcher); // 设置监听
             if (exists == null) {
                 // 更新到zk
@@ -96,11 +102,21 @@ public class MainTest {
             } else {
                 byte[] data = zooKeeper.getData(path, defaultWatcher, stat);
                 String zkValue = new String(data);
-                zkProps.put(key, zkValue); // 从zk获取的值放到zkProps中
+                ConfigBean bean = new ConfigBean();
+                bean.setValue(zkValue);
+                bean.setZookeeperPath(path);
+                bean.setBeanClass(configBean.getBeanClass());
+                bean.setBeanName(configBean.getBeanName());
+                zkProps.put(key, bean); // 从zk获取的值放到zkProps中
             }
         }
         myMap.putAll(zkProps); // 用zkProps更新props
-        System.out.println(myMap);
+        System.out.println("init ----->  " + Thread.currentThread()  + myMap);
         Thread.sleep(Integer.MAX_VALUE);
+    }
+
+    @Test
+    public void testAllBean() {
+        register.printBeanNames();
     }
 }

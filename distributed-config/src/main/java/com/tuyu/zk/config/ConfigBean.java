@@ -39,6 +39,7 @@ public class ConfigBean {
     private Class beanClass;
     private String beanName;
     private Class watcherClass;
+    private String zookeeperPath;
 
 
     public String getKey() {
@@ -81,6 +82,14 @@ public class ConfigBean {
         this.watcherClass = watcherClass;
     }
 
+    public String getZookeeperPath() {
+        return zookeeperPath;
+    }
+
+    public void setZookeeperPath(String zookeeperPath) {
+        this.zookeeperPath = zookeeperPath;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -92,7 +101,8 @@ public class ConfigBean {
         if (value != null ? !value.equals(that.value) : that.value != null) return false;
         if (beanClass != null ? !beanClass.equals(that.beanClass) : that.beanClass != null) return false;
         if (beanName != null ? !beanName.equals(that.beanName) : that.beanName != null) return false;
-        return watcherClass != null ? watcherClass.equals(that.watcherClass) : that.watcherClass == null;
+        if (watcherClass != null ? !watcherClass.equals(that.watcherClass) : that.watcherClass != null) return false;
+        return zookeeperPath != null ? zookeeperPath.equals(that.zookeeperPath) : that.zookeeperPath == null;
     }
 
     @Override
@@ -102,6 +112,19 @@ public class ConfigBean {
         result = 31 * result + (beanClass != null ? beanClass.hashCode() : 0);
         result = 31 * result + (beanName != null ? beanName.hashCode() : 0);
         result = 31 * result + (watcherClass != null ? watcherClass.hashCode() : 0);
+        result = 31 * result + (zookeeperPath != null ? zookeeperPath.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "ConfigBean{" +
+                "key='" + key + '\'' +
+                ", value='" + value + '\'' +
+                ", beanClass=" + beanClass +
+                ", beanName='" + beanName + '\'' +
+                ", watcherClass=" + watcherClass +
+                ", zookeeperPath='" + zookeeperPath + '\'' +
+                '}';
     }
 }

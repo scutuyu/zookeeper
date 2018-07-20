@@ -1,4 +1,13 @@
 .idea
 *.iml
-target/*
+
+target
+target/
+distributed-config/target/classes
+**/target/**
 *.class
+*.jar
+*.war
+
+log
+*.log

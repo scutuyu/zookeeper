@@ -14,9 +14,21 @@
         <property name="port" value="2181"/>
     </bean>
 
-    <util:map id="myMap" map-class="java.util.HashMap" key-type="java.lang.String" value-type="java.lang.Object">
-        <entry key="address.ip" value="127.0.0.1"/>
-        <entry key="address.port" value="2181"/>
+    <util:map id="myMap" map-class="java.util.HashMap" key-type="java.lang.String">
+        <entry key="address.ip">
+            <bean class="com.tuyu.zk.config.ConfigBean">
+                <property name="value" value="127.0.0.1"/>
+                <property name="beanClass" value="com.tuyu.zk.config.Address"/>
+                <property name="beanName" value="address"/>
+            </bean>
+        </entry>
+        <entry key="address.port">
+            <bean class="com.tuyu.zk.config.ConfigBean">
+                <property name="value" value="4000"/>
+                <property name="beanClass" value="com.tuyu.zk.config.Address"/>
+                <property name="beanName" value="address"/>
+            </bean>
+        </entry>
     </util:map>
 
 </beans>
